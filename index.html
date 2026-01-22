@@ -192,7 +192,7 @@
                 const icon = `https://www.google.com/s2/favicons?domain=${bm.url}&sz=64`;
                 return `
                 <div class="bm-card rounded-2xl group relative overflow-hidden" data-id="${bm.id}">
-                    <a href="${bm.url}" target="_blank" class="flex ${currentView === 'grid' ? 'flex-col p-5 text-center items-center' : 'flex-row items-center p-3'} gap-3 no-underline">
+                    <a href="${bm.url}" target="_self" class="flex ${currentView === 'grid' ? 'flex-col p-5 text-center items-center' : 'flex-row items-center p-3'} gap-3 no-underline">
                         <img src="${icon}" class="w-8 h-8 rounded-lg shrink-0 pointer-events-none" onerror="this.src='https://lucide.dev/api/icons/globe'">
                         <div class="flex-1 min-w-0">
                             <h3 class="font-bold truncate text-sm md:text-base text-gray-800">${bm.title}</h3>
