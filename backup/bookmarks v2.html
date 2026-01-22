@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="modern">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 10 Premium 3-Color Gradients */
+        [data-theme="modern"] { --bg-grad: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6B8DD6 100%); }
+        [data-theme="ocean"] { --bg-grad: linear-gradient(135deg, #02aab0 0%, #00cdac 50%, #02faaf 100%); }
+        [data-theme="sunset"] { --bg-grad: linear-gradient(135deg, #ff0844 0%, #ffb199 50%, #ffc3a0 100%); }
+        [data-theme="midnight"] { --bg-grad: linear-gradient(135deg, #232526 0%, #414345 50%, #232526 100%); }
+        [data-theme="forest"] { --bg-grad: linear-gradient(135deg, #11998e 0%, #38ef7d 50%, #11998e 100%); }
+        [data-theme="cherry"] { --bg-grad: linear-gradient(135deg, #eb3349 0%, #f45c43 50%, #eb3349 100%); }
+        [data-theme="space"] { --bg-grad: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); }
+        [data-theme="lemon"] { --bg-grad: linear-gradient(135deg, #fceeb5 0%, #f7d794 50%, #f3a683 100%); }
+        [data-theme="purple-haze"] { --bg-grad: linear-gradient(135deg, #7303c0 0%, #ec38bc 50%, #fdeff9 100%); }
+        [data-theme="northern-lights"] { --bg-grad: linear-gradient(135deg, #0575E6 0%, #021B79 50%, #00F260 100%); }
+
+        body { 
+            background: var(--bg-grad); 
+            background-attachment: fixed;
+            transition: all 0.5s ease; 
+            min-height: 100vh; 
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        /* Bookmark Card Styling */
+        .bm-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .bm-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Grid Logic: 2 per row on mobile */
+        #bookmark-list.grid-view { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 1rem; 
+        }
+        @media (min-width: 768px) {
+            #bookmark-list.grid-view { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem; }
+        }
+
+        #bookmark-list.list-view { display: flex; flex-direction: column; gap: 0.75rem; }
+
+        /* Centered Search Bar Logic */
+        .search-container {
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 50; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .sortable-ghost { opacity: 0; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <header class="max-w-4xl mx-auto mb-10">
+        <div class="flex items-center justify-center gap-3">
+            <div class="relative w-full max-w-md group">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white opacity-80"></i>
+                <input type="text" id="searchInput" placeholder="Search" 
+                    class="w-full pl-12 pr-4 py-3 rounded-2xl search-container text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 outline-none transition-all">
+            </div>
+            <button onclick="toggleModal('settingsModal')" class="p-3 rounded-2xl search-container text-white hover:bg-white/30 transition-all">
+                <i data-lucide="palette" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <div class="flex gap-1 bg-black/10 p-1 rounded-xl">
+                <button onclick="setView('grid')" id="gridBtn" class="p-2 rounded-lg transition-all"><i data-lucide="layout-grid" class="w-5 h-5"></i></button>
+                <button onclick="setView('list')" id="listBtn" class="p-2 rounded-lg transition-all"><i data-lucide="list" class="w-5 h-5"></i></button>
+            </div>
+            <button onclick="toggleModal('addModal')" class="bg-white text-gray-800 px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold shadow-lg hover:scale-105 active:scale-95 transition-all">
+                <i data-lucide="plus" class="w-5 h-5"></i> Add
+            </button>
+        </div>
+
+        <div id="bookmark-list" class="grid-view">
+            </div>
+    </main>
+
+    <div id="addModal" class="modal p-4">
+        <div class="bg-white p-6 md:p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">New Bookmark</h2>
+            <div class="space-y-4">
+                <input type="text" id="bmTitle" placeholder="Title" class="w-full p-3.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 text-gray-800">
+                <input type="url" id="bmUrl" placeholder="URL" class="w-full p-3.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 text-gray-800">
+                <div class="flex gap-3 mt-8">
+                    <button onclick="saveBookmark()" class="flex-1 bg-gray-800 text-white py-3.5 rounded-xl font-bold hover:bg-black transition-colors">Save</button>
+                    <button onclick="toggleModal('addModal')" class="flex-1 bg-gray-100 text-gray-600 py-3.5 rounded-xl font-bold">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settingsModal" class="modal p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-bold text-gray-800">Settings</h2>
+                <button onclick="toggleModal('settingsModal')" class="text-gray-400 hover:text-gray-600"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-2">Visual Theme</label>
+                    <select onchange="updateTheme(this.value)" id="themeSelect" class="w-full p-3 rounded-xl bg-gray-50 border border-gray-200 outline-none">
+                        <option value="modern">Indigo Purple</option>
+                        <option value="ocean">Emerald Ocean</option>
+                        <option value="sunset">Ruby Sunset</option>
+                        <option value="midnight">Midnight Slate</option>
+                        <option value="forest">Deep Forest</option>
+                        <option value="cherry">Cherry Blast</option>
+                        <option value="space">Deep Space</option>
+                        <option value="lemon">Summer Lemonade</option>
+                        <option value="purple-haze">Purple Haze</option>
+                        <option value="northern-lights">Northern Lights</option>
+                    </select>
+                </div>
+
+                <div class="pt-6 border-t border-gray-100">
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-3">Backup & Restore</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="exportData()" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-all text-sm font-medium">
+                            <i data-lucide="download" class="w-4 h-4"></i> Export
+                        </button>
+                        <button onclick="document.getElementById('importFile').click()" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600 transition-all text-sm font-medium">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Import
+                        </button>
+                        <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dbName = "ZenMarkDB_Final";
+        let db, bookmarks = [], currentView = 'grid';
+
+        const initDB = () => {
+            return new Promise((resolve) => {
+                const request = indexedDB.open(dbName, 1);
+                request.onupgradeneeded = (e) => {
+                    db = e.target.result;
+                    db.createObjectStore('bookmarks', { keyPath: 'id' });
+                    db.createObjectStore('settings');
+                };
+                request.onsuccess = (e) => { db = e.target.result; resolve(); };
+            });
+        };
+
+        const dbOp = (store, mode, cb) => {
+            const tx = db.transaction(store, mode);
+            return cb(tx.objectStore(store));
+        };
+
+        async function loadApp() {
+            await initDB();
+            dbOp('settings', 'readonly', s => {
+                s.get('theme').onsuccess = (e) => updateTheme(e.target.result || 'modern', false);
+                s.get('view').onsuccess = (e) => setView(e.target.result || 'grid');
+            });
+            dbOp('bookmarks', 'readonly', s => {
+                s.getAll().onsuccess = (e) => {
+                    bookmarks = e.target.result.sort((a,b) => a.order - b.order);
+                    render();
+                };
+            });
+        }
+
+        function render() {
+            const list = document.getElementById('bookmark-list');
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = bookmarks.filter(b => b.title.toLowerCase().includes(query));
+            
+            list.innerHTML = filtered.map(bm => {
+                const icon = `https://www.google.com/s2/favicons?domain=${bm.url}&sz=64`;
+                return `
+                <div class="bm-card rounded-2xl group relative overflow-hidden" data-id="${bm.id}">
+                    <a href="${bm.url}" target="_self" class="flex ${currentView === 'grid' ? 'flex-col p-5 text-center items-center' : 'flex-row items-center p-3'} gap-3 no-underline">
+                        <img src="${icon}" class="w-8 h-8 rounded-lg shrink-0 pointer-events-none" onerror="this.src='https://lucide.dev/api/icons/globe'">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-bold truncate text-sm md:text-base text-gray-800">${bm.title}</h3>
+                        </div>
+                    </a>
+                    
+                    <div class="absolute top-1 right-1 flex opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.preventDefault(); event.stopPropagation();">
+                        <button onclick="deleteBookmark('${bm.id}')" class="p-1.5 text-gray-300 hover:text-red-500 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                        <div class="cursor-move p-1.5 text-gray-200 hover:text-gray-400 transition-colors">
+                            <i data-lucide="grip-vertical" class="w-4 h-4"></i>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+            lucide.createIcons();
+        }
+
+        async function saveBookmark() {
+            const title = document.getElementById('bmTitle').value;
+            const url = document.getElementById('bmUrl').value;
+            if(!title || !url) return;
+
+            const newBm = { id: crypto.randomUUID(), title, url, order: bookmarks.length };
+            bookmarks.push(newBm);
+            dbOp('bookmarks', 'readwrite', s => s.add(newBm));
+            
+            toggleModal('addModal');
+            document.getElementById('bmTitle').value = '';
+            document.getElementById('bmUrl').value = '';
+            render();
+        }
+
+        function deleteBookmark(id) {
+            if(!confirm("Delete this bookmark?")) return;
+            bookmarks = bookmarks.filter(b => b.id !== id);
+            dbOp('bookmarks', 'readwrite', s => s.delete(id));
+            render();
+        }
+
+        function updateTheme(theme, save = true) {
+            document.documentElement.setAttribute('data-theme', theme);
+            document.getElementById('themeSelect').value = theme;
+            if(save) dbOp('settings', 'readwrite', s => s.put(theme, 'theme'));
+        }
+
+        function setView(view) {
+            currentView = view;
+            const list = document.getElementById('bookmark-list');
+            list.className = view === 'grid' ? 'grid-view' : 'list-view';
+            
+            document.getElementById('gridBtn').className = `p-2 rounded-lg ${view === 'grid' ? 'bg-white text-gray-800' : 'text-white/70 hover:bg-white/10'}`;
+            document.getElementById('listBtn').className = `p-2 rounded-lg ${view === 'list' ? 'bg-white text-gray-800' : 'text-white/70 hover:bg-white/10'}`;
+            dbOp('settings', 'readwrite', s => s.put(view, 'view'));
+            render();
+        }
+
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.toggle('active');
+        }
+
+        // Close modals on background click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        new Sortable(document.getElementById('bookmark-list'), {
+            animation: 250,
+            handle: '.cursor-move',
+            onEnd: () => {
+                const elements = [...document.getElementById('bookmark-list').children];
+                bookmarks = elements.map((el, index) => {
+                    const bm = bookmarks.find(b => b.id === el.dataset.id);
+                    bm.order = index;
+                    dbOp('bookmarks', 'readwrite', s => s.put(bm));
+                    return bm;
+                });
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('input', render);
+
+        function exportData() {
+            const dataStr = JSON.stringify(bookmarks);
+            const blob = new Blob([dataStr], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `zenmark_backup.json`;
+            link.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    bookmarks = imported;
+                    dbOp('bookmarks', 'readwrite', s => {
+                        s.clear();
+                        imported.forEach(item => s.add(item));
+                    });
+                    render();
+                    toggleModal('settingsModal');
+                } catch(err) { alert("Invalid Backup File"); }
+            };
+            reader.readAsText(file);
+        }
+
+        window.onload = loadApp;
+    </script>
+</body>
+</html>
