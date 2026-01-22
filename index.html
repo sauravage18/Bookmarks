@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bookmarks</title>
+    <title>ZenMark - My Bookmarks</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* 10 Premium 3-Color Gradients */
         [data-theme="modern"] { --bg-grad: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6B8DD6 100%); }
         [data-theme="ocean"] { --bg-grad: linear-gradient(135deg, #02aab0 0%, #00cdac 50%, #02faaf 100%); }
         [data-theme="sunset"] { --bg-grad: linear-gradient(135deg, #ff0844 0%, #ffb199 50%, #ffc3a0 100%); }
@@ -28,7 +27,6 @@
             font-family: 'Inter', system-ui, sans-serif;
         }
 
-        /* Bookmark Card Styling */
         .bm-card {
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -40,7 +38,6 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
         }
 
-        /* Grid Logic: 2 per row on mobile */
         #bookmark-list.grid-view { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
@@ -52,7 +49,6 @@
 
         #bookmark-list.list-view { display: flex; flex-direction: column; gap: 0.75rem; }
 
-        /* Centered Search Bar Logic */
         .search-container {
             backdrop-filter: blur(12px);
             background: rgba(255, 255, 255, 0.2);
@@ -70,7 +66,7 @@
         <div class="flex items-center justify-center gap-3">
             <div class="relative w-full max-w-md group">
                 <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white opacity-80"></i>
-                <input type="text" id="searchInput" placeholder="Search" 
+                <input type="text" id="searchInput" placeholder="Search Bookmarks..." 
                     class="w-full pl-12 pr-4 py-3 rounded-2xl search-container text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 outline-none transition-all">
             </div>
             <button onclick="toggleModal('settingsModal')" class="p-3 rounded-2xl search-container text-white hover:bg-white/30 transition-all">
@@ -81,7 +77,7 @@
 
     <main class="max-w-6xl mx-auto">
         <div class="flex justify-between items-center mb-8">
-            <div class="flex gap-1 bg-black/10 p-1 rounded-xl">
+            <div class="flex gap-1 bg-black/10 p-1 rounded-xl text-white">
                 <button onclick="setView('grid')" id="gridBtn" class="p-2 rounded-lg transition-all"><i data-lucide="layout-grid" class="w-5 h-5"></i></button>
                 <button onclick="setView('list')" id="listBtn" class="p-2 rounded-lg transition-all"><i data-lucide="list" class="w-5 h-5"></i></button>
             </div>
@@ -90,8 +86,7 @@
             </button>
         </div>
 
-        <div id="bookmark-list" class="grid-view">
-            </div>
+        <div id="bookmark-list" class="grid-view"></div>
     </main>
 
     <div id="addModal" class="modal p-4">
@@ -99,7 +94,7 @@
             <h2 class="text-xl font-bold text-gray-800 mb-6">New Bookmark</h2>
             <div class="space-y-4">
                 <input type="text" id="bmTitle" placeholder="Title" class="w-full p-3.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 text-gray-800">
-                <input type="url" id="bmUrl" placeholder="URL" class="w-full p-3.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 text-gray-800">
+                <input type="url" id="bmUrl" placeholder="URL (https://...)" class="w-full p-3.5 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:border-indigo-500 text-gray-800">
                 <div class="flex gap-3 mt-8">
                     <button onclick="saveBookmark()" class="flex-1 bg-gray-800 text-white py-3.5 rounded-xl font-bold hover:bg-black transition-colors">Save</button>
                     <button onclick="toggleModal('addModal')" class="flex-1 bg-gray-100 text-gray-600 py-3.5 rounded-xl font-bold">Cancel</button>
@@ -114,7 +109,6 @@
                 <h2 class="text-xl font-bold text-gray-800">Settings</h2>
                 <button onclick="toggleModal('settingsModal')" class="text-gray-400 hover:text-gray-600"><i data-lucide="x"></i></button>
             </div>
-            
             <div class="space-y-6">
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-400 mb-2">Visual Theme</label>
@@ -131,7 +125,6 @@
                         <option value="northern-lights">Northern Lights</option>
                     </select>
                 </div>
-
                 <div class="pt-6 border-t border-gray-100">
                     <label class="block text-xs font-bold uppercase text-gray-400 mb-3">Backup & Restore</label>
                     <div class="grid grid-cols-2 gap-3">
@@ -149,9 +142,30 @@
     </div>
 
     <script>
+        // --- CONFIGURATION ---
         const dbName = "ZenMarkDB_Final";
         let db, bookmarks = [], currentView = 'grid';
 
+
+
+
+
+
+
+
+        // Add your STATIC bookmarks here
+        const STATIC_BOOKMARKS = [
+          //  { id: 'static-1', title: 'Google', url: 'https://google.com', order: -2, isStatic: true },
+         //   { id: 'static-2', title: 'YouTube', url: 'https://youtube.com', order: -1, isStatic: true }
+        ];
+
+
+
+
+
+
+
+        // --- DATABASE LOGIC ---
         const initDB = () => {
             return new Promise((resolve) => {
                 const request = indexedDB.open(dbName, 1);
@@ -177,12 +191,15 @@
             });
             dbOp('bookmarks', 'readonly', s => {
                 s.getAll().onsuccess = (e) => {
-                    bookmarks = e.target.result.sort((a,b) => a.order - b.order);
+                    const userBookmarks = e.target.result;
+                    // Merge static and user-saved bookmarks
+                    bookmarks = [...STATIC_BOOKMARKS, ...userBookmarks].sort((a,b) => a.order - b.order);
                     render();
                 };
             });
         }
 
+        // --- UI RENDERING ---
         function render() {
             const list = document.getElementById('bookmark-list');
             const query = document.getElementById('searchInput').value.toLowerCase();
@@ -199,6 +216,7 @@
                         </div>
                     </a>
                     
+                    ${bm.isStatic ? '' : `
                     <div class="absolute top-1 right-1 flex opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.preventDefault(); event.stopPropagation();">
                         <button onclick="deleteBookmark('${bm.id}')" class="p-1.5 text-gray-300 hover:text-red-500 transition-colors">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -207,11 +225,13 @@
                             <i data-lucide="grip-vertical" class="w-4 h-4"></i>
                         </div>
                     </div>
+                    `}
                 </div>
             `}).join('');
             lucide.createIcons();
         }
 
+        // --- ACTIONS ---
         async function saveBookmark() {
             const title = document.getElementById('bmTitle').value;
             const url = document.getElementById('bmUrl').value;
@@ -256,7 +276,6 @@
             modal.classList.toggle('active');
         }
 
-        // Close modals on background click
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.classList.remove('active');
@@ -268,11 +287,13 @@
             handle: '.cursor-move',
             onEnd: () => {
                 const elements = [...document.getElementById('bookmark-list').children];
-                bookmarks = elements.map((el, index) => {
+                // Only save order for non-static bookmarks
+                elements.forEach((el, index) => {
                     const bm = bookmarks.find(b => b.id === el.dataset.id);
-                    bm.order = index;
-                    dbOp('bookmarks', 'readwrite', s => s.put(bm));
-                    return bm;
+                    if (bm && !bm.isStatic) {
+                        bm.order = index;
+                        dbOp('bookmarks', 'readwrite', s => s.put(bm));
+                    }
                 });
             }
         });
@@ -280,7 +301,8 @@
         document.getElementById('searchInput').addEventListener('input', render);
 
         function exportData() {
-            const dataStr = JSON.stringify(bookmarks);
+            const userOnly = bookmarks.filter(b => !b.isStatic);
+            const dataStr = JSON.stringify(userOnly);
             const blob = new Blob([dataStr], {type: "application/json"});
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -296,12 +318,12 @@
             reader.onload = async (e) => {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    bookmarks = imported;
                     dbOp('bookmarks', 'readwrite', s => {
                         s.clear();
                         imported.forEach(item => s.add(item));
                     });
-                    render();
+                    // Reload the full app to merge static bookmarks again
+                    loadApp();
                     toggleModal('settingsModal');
                 } catch(err) { alert("Invalid Backup File"); }
             };
