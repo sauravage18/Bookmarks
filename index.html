@@ -154,7 +154,7 @@
 
 
         // Add your STATIC bookmarks here
-    const STATIC_BOOKMARKS = [
+   const STATIC_BOOKMARKS = [
     // --- Search Engines ---
     { id: 'static-1', title: 'Google', url: 'https://google.com', order: -30, isStatic: true },
     { id: 'static-2', title: 'Bing', url: 'https://www.bing.com', order: -29, isStatic: true },
@@ -164,68 +164,70 @@
     { id: 'static-6', title: 'Startpage', url: 'https://www.startpage.com', order: -25, isStatic: true },
     { id: 'static-7', title: 'Ecosia', url: 'https://www.ecosia.org', order: -24, isStatic: true },
 
-    // --- AI Assistants ---
+    // --- AI Assistants & Communities ---
     { id: 'static-8', title: 'ChatGPT', url: 'https://chatgpt.com', order: -23, isStatic: true },
     { id: 'static-9', title: 'Gemini', url: 'https://gemini.google.com', order: -22, isStatic: true },
     { id: 'static-10', title: 'DeepSeek', url: 'https://www.deepseek.com', order: -21, isStatic: true },
     { id: 'static-11', title: 'Grok', url: 'https://grok.com', order: -20, isStatic: true },
-    { id: 'static-12', title: 'Qwen AI', url: 'https://chat.qwenlm.ai', order: -19, isStatic: true },
+    { id: 'static-12', title: 'Qwen AI', url: 'https://qwen.ai/qwenchat', order: -19, isStatic: true },
     { id: 'static-13', title: 'Sage AI (Poe)', url: 'https://poe.com/Sage', order: -18, isStatic: true },
+    { id: 'static-14', title: 'Hugging Face', url: 'https://huggingface.co', order: -17, isStatic: true },
 
     // --- Media & Social ---
-    { id: 'static-14', title: 'YouTube', url: 'https://youtube.com', order: -17, isStatic: true },
-    { id: 'static-15', title: '9xBuddy', url: 'https://9xbuddy.site/', order: -16, isStatic: true },
-    { id: 'static-16', title: 'M3U8 Player', url: 'https://m3u8.dev/', order: -15, isStatic: true },
-    { id: 'static-17', title: 'M3U8 Downloader', url: 'https://m3u8downloaders.com/', order: -14, isStatic: true },
+    { id: 'static-15', title: 'YouTube', url: 'https://youtube.com', order: -16, isStatic: true },
+    { id: 'static-16', title: '9xBuddy', url: 'https://9xbuddy.site/', order: -15, isStatic: true },
+    { id: 'static-17', title: 'M3U8 Player', url: 'https://m3u8.dev/', order: -14, isStatic: true },
+    { id: 'static-18', title: 'M3U8 Downloader', url: 'https://m3u8downloaders.com/', order: -13, isStatic: true },
 
     // --- Finance & Cloud Storage ---
-    { id: 'static-18', title: 'SIP Calculator', url: 'https://sipcalculator.in/', order: -13, isStatic: true },
-    { id: 'static-19', title: 'Moneycontrol Global Indices', url: 'https://www.moneycontrol.com/markets/global-indices/', order: -12, isStatic: true },
-    { id: 'static-20', title: 'Dropbox', url: 'https://www.dropbox.com/login', order: -11, isStatic: true },
-    { id: 'static-21', title: 'MEGA', url: 'https://mega.io/', order: -10, isStatic: true },
-    { id: 'static-22', title: 'MultCloud', url: 'https://www.multcloud.com/index.jsp?rl=en-US#home', order: -9, isStatic: true },
-    { id: 'static-23', title: 'Seedr', url: 'https://www.seedr.cc/', order: -8, isStatic: true },
+    { id: 'static-19', title: 'SIP Calculator', url: 'https://sipcalculator.in/', order: -12, isStatic: true },
+    { id: 'static-20', title: 'Moneycontrol Global Indices', url: 'https://www.moneycontrol.com/markets/global-indices/', order: -11, isStatic: true },
+    { id: 'static-21', title: 'Dropbox', url: 'https://www.dropbox.com/login', order: -10, isStatic: true },
+    { id: 'static-22', title: 'MEGA', url: 'https://mega.io/', order: -9, isStatic: true },
+    { id: 'static-23', title: 'MultCloud', url: 'https://www.multcloud.com/index.jsp?rl=en-US#home', order: -8, isStatic: true },
+    { id: 'static-24', title: 'Seedr', url: 'https://www.seedr.cc/', order: -7, isStatic: true },
 
     // --- Productivity & Tools ---
-    { id: 'static-24', title: 'Web Notes', url: 'https://saurav781996.github.io/Web-Notes/', order: -7, isStatic: true },
-    { id: 'static-25', title: 'Image to Text', url: 'https://www.imagetotext.info/', order: -6, isStatic: true },
-    { id: 'static-26', title: 'Google Translate', url: 'https://translate.google.co.in/?sl=auto&tl=en&op=translate', order: -5, isStatic: true },
-    { id: 'static-27', title: 'Merge PDF', url: 'https://www.ilovepdf.com/merge_pdf', order: -4, isStatic: true },
-    { id: 'static-28', title: 'Image Compressor', url: 'https://imagecompressor.io/compress-to-exact-size', order: -3, isStatic: true },
-    { id: 'static-29', title: 'Temp Mail', url: 'https://tempmailo.com/', order: -2, isStatic: true },
-    { id: 'static-30', title: 'Remove BG', url: 'https://www.remove.bg/', order: -1, isStatic: true },
-    { id: 'static-31', title: 'Crop Circle Image', url: 'https://crop-circle.imageonline.co/', order: 0, isStatic: true },
-    { id: 'static-32', title: 'Convert to SVG', url: 'https://express.adobe.com/tools/convert-to-svg', order: 1, isStatic: true },
-    { id: 'static-33', title: 'Image Resizer', url: 'https://imageresizer.com/', order: 2, isStatic: true },
-    { id: 'static-34', title: 'Invert Colors', url: 'https://pinetools.com/invert-image-colors', order: 3, isStatic: true },
-    { id: 'static-35', title: 'Fancy Text Generator', url: 'https://coolsymbol.com/cool-fancy-text-generator.html', order: 4, isStatic: true },
+    { id: 'static-25', title: 'Web Notes', url: 'https://saurav781996.github.io/Web-Notes/', order: -6, isStatic: true },
+    { id: 'static-26', title: 'Image to Text', url: 'https://www.imagetotext.info/', order: -5, isStatic: true },
+    { id: 'static-27', title: 'Google Translate', url: 'https://translate.google.co.in/?sl=auto&tl=en&op=translate', order: -4, isStatic: true },
+    { id: 'static-28', title: 'Merge PDF', url: 'https://www.ilovepdf.com/merge_pdf', order: -3, isStatic: true },
+    { id: 'static-29', title: 'Image Compressor', url: 'https://imagecompressor.io/compress-to-exact-size', order: -2, isStatic: true },
+    { id: 'static-30', title: 'Temp Mail', url: 'https://tempmailo.com/', order: -1, isStatic: true },
+    { id: 'static-31', title: 'Remove BG', url: 'https://www.remove.bg/', order: 0, isStatic: true },
+    { id: 'static-32', title: 'Crop Circle Image', url: 'https://crop-circle.imageonline.co/', order: 1, isStatic: true },
+    { id: 'static-33', title: 'Convert to SVG', url: 'https://express.adobe.com/tools/convert-to-svg', order: 2, isStatic: true },
+    { id: 'static-34', title: 'Image Resizer', url: 'https://imageresizer.com/', order: 3, isStatic: true },
+    { id: 'static-35', title: 'Invert Colors', url: 'https://pinetools.com/invert-image-colors', order: 4, isStatic: true },
+    { id: 'static-36', title: 'Fancy Text Generator', url: 'https://coolsymbol.com/cool-fancy-text-generator.html', order: 5, isStatic: true },
 
     // --- Developer Tools ---
-    { id: 'static-36', title: 'APK Decompiler', url: 'http://www.javadecompilers.com/apk', order: 5, isStatic: true },
-    { id: 'static-37', title: 'JS Obfuscator', url: 'https://obfuscator.io/', order: 6, isStatic: true },
-    { id: 'static-38', title: 'JSON Editor Online', url: 'https://jsoneditoronline.org/', order: 7, isStatic: true },
-    { id: 'static-39', title: 'SVG to Vector Drawable', url: 'https://shapeshifter.design/', order: 8, isStatic: true },
-    { id: 'static-40', title: 'HTML Color Picker', url: 'https://www.w3schools.com/colors/colors_picker.asp', order: 9, isStatic: true },
-    { id: 'static-41', title: 'App Icon Generator', url: 'https://www.appicon.co/', order: 10, isStatic: true },
-    { id: 'static-42', title: 'JSON Placeholder', url: 'https://jsonplaceholder.typicode.com/', order: 11, isStatic: true },
-    { id: 'static-43', title: 'Webhook Site', url: 'https://webhook.site/', order: 12, isStatic: true },
-    { id: 'static-44', title: 'Free MySQL Hosting', url: 'https://www.freemysqlhosting.net/', order: 13, isStatic: true },
-    { id: 'static-45', title: 'FillDB (Demo Data)', url: 'https://filldb.info/', order: 14, isStatic: true },
+    { id: 'static-37', title: 'APK Decompiler', url: 'http://www.javadecompilers.com/apk', order: 6, isStatic: true },
+    { id: 'static-38', title: 'JS Obfuscator', url: 'https://obfuscator.io/', order: 7, isStatic: true },
+    { id: 'static-39', title: 'JSON Editor Online', url: 'https://jsoneditoronline.org/', order: 8, isStatic: true },
+    { id: 'static-40', title: 'SVG to Vector Drawable', url: 'https://shapeshifter.design/', order: 9, isStatic: true },
+    { id: 'static-41', title: 'HTML Color Picker', url: 'https://www.w3schools.com/colors/colors_picker.asp', order: 10, isStatic: true },
+    { id: 'static-42', title: 'App Icon Generator', url: 'https://www.appicon.co/', order: 11, isStatic: true },
+    { id: 'static-43', title: 'JSON Placeholder', url: 'https://jsonplaceholder.typicode.com/', order: 12, isStatic: true },
+    { id: 'static-44', title: 'Webhook Site', url: 'https://webhook.site/', order: 13, isStatic: true },
+    { id: 'static-45', title: 'Free MySQL Hosting', url: 'https://www.freemysqlhosting.net/', order: 14, isStatic: true },
+    { id: 'static-46', title: 'FillDB (Demo Data)', url: 'https://filldb.info/', order: 15, isStatic: true },
+    { id: 'static-47', title: 'Online Kotlin Compiler', url: 'https://www.tutorialspoint.com/compilers/online-kotlin-compiler.htm', order: 16, isStatic: true },
+    { id: 'static-48', title: 'Kotlin Playground', url: 'https://play.kotlinlang.org', order: 17, isStatic: true },
 
     // --- Communication & Games ---
-    { id: 'static-46', title: 'Online Chess', url: 'https://buddyboardgames.com/chess', order: 15, isStatic: true },
-    { id: 'static-47', title: 'Tlk.io Chat', url: 'https://tlk.io/', order: 16, isStatic: true },
-    { id: 'static-48', title: 'Jitsi Meet', url: 'https://meet.jit.si/', order: 17, isStatic: true },
+    { id: 'static-49', title: 'WhatsApp Web', url: 'https://web.whatsapp.com', order: 18, isStatic: true },
+    { id: 'static-50', title: 'MS Teams', url: 'https://teams.live.com/v2/', order: 19, isStatic: true },
+    { id: 'static-51', title: 'Online Chess', url: 'https://buddyboardgames.com/chess', order: 20, isStatic: true },
+    { id: 'static-52', title: 'Tlk.io Chat', url: 'https://tlk.io/', order: 21, isStatic: true },
+    { id: 'static-53', title: 'Jitsi Meet', url: 'https://meet.jit.si/', order: 22, isStatic: true },
 
     // --- Travel & Information ---
-    { id: 'static-49', title: 'Live Train Status', url: 'https://www.railyatri.in/amp/live-train-status', order: 18, isStatic: true },
-    { id: 'static-50', title: 'PNR Enquiry', url: 'http://www.indianrail.gov.in/enquiry/PNR/PnrEnquiry.html?locale=en', order: 19, isStatic: true },
-    { id: 'static-51', title: 'Earth Wind Map', url: 'https://earth.nullschool.net/', order: 20, isStatic: true },
-    { id: 'static-52', title: 'FlightRadar24', url: 'https://www.flightradar24.com/airport/ind', order: 21, isStatic: true }
-{ id: 'static-53', title: 'Online Kotlin Compiler', url: 'https://www.tutorialspoint.com/compilers/online-kotlin-compiler.htm', order: 22, isStatic: true }
-        { id: 'static-54', title: 'Kotlin Playground', url: 'https://play.kotlinlang.org', order: 23, isStatic: true }
-    
-    ];
+    { id: 'static-54', title: 'Live Train Status', url: 'https://www.railyatri.in/amp/live-train-status', order: 23, isStatic: true },
+    { id: 'static-55', title: 'PNR Enquiry', url: 'http://www.indianrail.gov.in/enquiry/PNR/PnrEnquiry.html?locale=en', order: 24, isStatic: true },
+    { id: 'static-56', title: 'Earth Wind Map', url: 'https://earth.nullschool.net/', order: 25, isStatic: true },
+    { id: 'static-57', title: 'FlightRadar24', url: 'https://www.flightradar24.com/airport/ind', order: 26, isStatic: true }
+];
 
 
 
