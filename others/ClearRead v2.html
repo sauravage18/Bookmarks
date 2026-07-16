@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<!-- saved from url=(0041)https://saurav781996.github.io/ClearRead/ -->
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClearRead — Fast &amp; Simple</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #f5f5f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .tabs {
+      display: flex;
+      gap: 5px;
+      padding: 10px 10px 0 10px;
+      background: #f5f5f5;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 6px 6px 0 0;
+      padding: 8px 12px;
+      background: #e0e0e0;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.2s;
+    }
+    .tab-btn.active {
+      background: #ffffff;
+      font-weight: bold;
+      border-bottom: 1px solid #ffffff;
+      margin-bottom: -1px;
+      position: relative;
+      z-index: 2;
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      justify-content: center;
+      background: #ffffff;
+      border-top: 1px solid #ccc;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    button.action-btn {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 6px 12px;
+      background: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      width: auto;
+      transition: background 0.2s;
+    }
+    button.action-btn:hover {
+      background: #f0f0f0;
+    }
+    #editor {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      padding: 12px;
+      font-size: 16px;
+      line-height: 1.5;
+      border: none;
+      outline: none;
+      resize: none;
+      background: #fff;
+      box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
+    }
+    .toast {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="1">Tab 1</button>
+    <button class="tab-btn" data-tab="2">Tab 2</button>
+    <button class="tab-btn" data-tab="3">Tab 3</button>
+    <button class="tab-btn" data-tab="4">Tab 4</button>
+    <button class="tab-btn" data-tab="5">Tab 5</button>
+  </div>
+  
+  <div class="toolbar">
+    <button class="action-btn" id="pasteBtn">Paste</button>
+    <button class="action-btn" id="copyBtn">Copy</button>
+    <button class="action-btn" id="saveBtn">Save</button>
+    <button class="action-btn" id="clearBtn">Clear</button>
+  </div>
+  
+  <textarea id="editor" placeholder="Type or paste text here..."></textarea>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const editor = document.getElementById('editor');
+    const pasteBtn = document.getElementById('pasteBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toast = document.getElementById('toast');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+
+    let currentTab = 1;
+
+    function getStorageKey(tabIndex) {
+      return `clearread_text_${tabIndex}`;
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.style.opacity = 1;
+      setTimeout(() => toast.style.opacity = 0, 1200);
+    }
+
+    function save() {
+      localStorage.setItem(getStorageKey(currentTab), editor.value);
+      showToast("Saved");
+    }
+
+    function load() {
+      const data = localStorage.getItem(getStorageKey(currentTab));
+      if (data) {
+        editor.value = data;
+      } else {
+        editor.value = '';
+      }
+    }
+
+    function switchTab(tabIndex) {
+      // Save current tab's content before switching to prevent data loss
+      localStorage.setItem(getStorageKey(currentTab), editor.value);
+      
+      currentTab = tabIndex;
+      
+      // Update UI
+      tabBtns.forEach(btn => {
+        btn.classList.remove('active');
+        if (parseInt(btn.dataset.tab) === currentTab) {
+          btn.classList.add('active');
+        }
+      });
+      
+      // Load new tab's content
+      load();
+    }
+
+    async function paste() {
+      try {
+        if (navigator.clipboard?.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text) {
+            editor.value = text;
+            showToast("Pasted");
+            return;
+          }
+        }
+        // Fallback for Android/older browsers
+        const temp = document.createElement("textarea");
+        document.body.appendChild(temp);
+        temp.focus();
+        document.execCommand("paste");
+        editor.value = temp.value;
+        document.body.removeChild(temp);
+        showToast("Pasted (Fallback)");
+      } catch (e) {
+        console.log(e);
+        showToast("Clipboard blocked");
+      }
+    }
+
+    async function copy() {
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(editor.value);
+          showToast("Copied");
+        } else {
+          // Fallback for older browsers
+          editor.focus();
+          editor.setSelectionRange(0, 999999);
+          document.execCommand("copy");
+          showToast("Copied (Fallback)");
+        }
+      } catch (e) {
+        console.log(e);
+        showToast("Copy failed");
+      }
+    }
+
+    // Event Listeners
+    pasteBtn.onclick = paste;
+    copyBtn.onclick = copy;
+    saveBtn.onclick = save;
+    clearBtn.onclick = () => {
+      editor.value = '';
+      localStorage.removeItem(getStorageKey(currentTab));
+      showToast("Cleared");
+    };
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabIndex = parseInt(btn.dataset.tab);
+        if (tabIndex !== currentTab) {
+          switchTab(tabIndex);
+        }
+      });
+    });
+
+    // Silent auto-save on typing to prevent accidental data loss
+    editor.addEventListener('input', () => {
+      localStorage.setItem(getStorageKey(currentTab), editor.value);
+    });
+
+    // Initial load
+    load();
+  </script>
+</body>
+</html>
