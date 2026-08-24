@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JSON Text Extractor</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    margin: 0;
+    padding: 16px;
+    min-height: 100vh;
+    -webkit-text-size-adjust: 100%;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  h1 {
+    color: #38bdf8;
+    margin-bottom: 16px;
+    font-size: clamp(20px, 5vw, 24px);
+    text-align: center;
+  }
+  .panel {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #94a3b8;
+    font-size: 14px;
+  }
+  input[type="file"],
+  textarea {
+    width: 100%;
+    padding: 12px;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 6px;    font-family: inherit;
+    font-size: 16px;
+  }
+  textarea {
+    min-height: 120px;
+    resize: vertical;
+    font-family: "Courier New", monospace;
+  }
+  button {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+    margin-right: 8px;
+    margin-top: 8px;
+    transition: background 0.2s;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+  button:hover { background: #0284c7; }
+  button:active { transform: scale(0.98); }
+  button.secondary { background: #475569; }
+  button.secondary:hover { background: #334155; }
+  .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .button-group button {
+    margin: 0;
+    flex: 1;
+    min-width: 120px;
+  }
+  #output {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 16px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    min-height: 150px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.6;  }
+  .card-block {
+    border-bottom: 1px dashed #334155;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+  .card-block:last-child { border-bottom: none; }
+  .card-index {
+    color: #38bdf8;
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #22c55e;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 90%;
+    text-align: center;
+    font-size: 14px;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #ef4444; }
+  
+  @media (max-width: 600px) {
+    body {
+      padding: 12px;
+    }
+    .panel {
+      padding: 12px;
+    }
+    button {
+      padding: 12px 16px;
+      font-size: 14px;
+    }
+    .button-group {
+      flex-direction: column;
+    }
+    .button-group button {
+      width: 100%;
+      min-width: 100%;    }
+    #output {
+      font-size: 13px;
+      padding: 12px;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📄 JSON Text Extractor</h1>
+
+  <div class="panel">
+    <label for="fileInput">1. Load JSON file</label>
+    <input type="file" id="fileInput" accept=".json,application/json" />
+  </div>
+
+  <div class="panel">
+    <label for="jsonInput">2. Or paste JSON here</label>
+    <textarea id="jsonInput" placeholder='Paste your JSON here...'></textarea>
+    <button onclick="processJSON()">Extract Text</button>
+    <button class="secondary" onclick="clearAll()">Clear</button>
+  </div>
+
+  <div class="panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <label style="margin:0;">3. Extracted Text</label>
+      <div class="button-group" style="margin:0;">
+        <button onclick="copyAll()">📋 Copy All</button>
+        <button class="secondary" onclick="downloadText()">💾 Download .txt</button>
+      </div>
+    </div>
+    <div id="output" style="margin-top:12px;">No data yet. Load a JSON file or paste JSON above.</div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let extractedText = "";
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isError ? " error" : "");
+  setTimeout(() => { t.className = "toast" + (isError ? " error" : ""); }, 2000);
+}
+
+function clearAll() {
+  document.getElementById("jsonInput").value = "";  document.getElementById("fileInput").value = "";
+  document.getElementById("output").textContent = "No data yet.";
+  extractedText = "";
+}
+
+function processJSON() {
+  const raw = document.getElementById("jsonInput").value.trim();
+  if (!raw) {
+    showToast("Please paste or load JSON first", true);
+    return;
+  }
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    showToast("Invalid JSON: " + e.message, true);
+    return;
+  }
+
+  let cards = [];
+  if (Array.isArray(data.cards)) {
+    cards = data.cards;
+  } else if (Array.isArray(data)) {
+    cards = data;
+  } else {
+    showToast("No 'cards' array found in JSON", true);
+    return;
+  }
+
+  cards.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+  const texts = cards
+    .map(c => (c.text || "").toString())
+    .filter(t => t.trim().length > 0);
+
+  if (texts.length === 0) {
+    document.getElementById("output").textContent = "No text data found in cards.";
+    extractedText = "";
+    showToast("No text found", true);
+    return;
+  }
+
+  extractedText = texts.join("\n\n---\n\n");
+
+  const output = document.getElementById("output");
+  output.innerHTML = "";
+  texts.forEach((t, i) => {
+    const block = document.createElement("div");
+    block.className = "card-block";
+    block.innerHTML = `<div class="card-index">Card #${i + 1}</div><div>${escapeHtml(t)}</div>`;    output.appendChild(block);
+  });
+
+  showToast(`Extracted ${texts.length} card(s)`);
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+}
+
+async function copyAll() {
+  if (!extractedText) {
+    showToast("Nothing to copy", true);
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(extractedText);
+    showToast("Copied to clipboard!");
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = extractedText;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    showToast("Copied to clipboard!");
+  }
+}
+
+function downloadText() {
+  if (!extractedText) {
+    showToast("Nothing to download", true);
+    return;
+  }
+  const blob = new Blob([extractedText], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "extracted_text.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Downloaded!");
+}
+
+document.getElementById("fileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById("jsonInput").value = ev.target.result;    processJSON();
+  };
+  reader.onerror = () => showToast("Failed to read file", true);
+  reader.readAsText(file);
+});
+</script>
+</body>
+</html>
