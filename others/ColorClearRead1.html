@@ -33,13 +33,10 @@
       font-size: 14px;
       cursor: pointer;
       text-align: center;
-      transition: filter 0.2s, background 0.2s, transform 0.1s;
+      transition: filter 0.2s, background 0.2s;
     }
     .tab-btn:hover {
-      filter: brightness(0.96);
-    }
-    .tab-btn:active {
-      transform: translateY(1px);
+      filter: brightness(0.98);
     }
     .tab-btn.active {
       filter: none;
@@ -48,16 +45,14 @@
       margin-bottom: -1px;
       position: relative;
       z-index: 2;
-      box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
     }
+    /* Updated Modern Pastel Color Profile */
+    .tab-btn[data-tab="1"] { --tab-color: #fee2e2; } /* Soft Red */
+    .tab-btn[data-tab="2"] { --tab-color: #dbeafe; } /* Soft Blue */
+    .tab-btn[data-tab="3"] { --tab-color: #dcfce7; } /* Soft Green */
+    .tab-btn[data-tab="4"] { --tab-color: #fef3c7; } /* Soft Amber */
+    .tab-btn[data-tab="5"] { --tab-color: #f3e8ff; } /* Soft Purple */
     
-    /* Fresh, distinct pastel colors for each tab */
-    .tab-btn[data-tab="1"] { --tab-color: #e3f2fd; } /* Soft Blue */
-    .tab-btn[data-tab="2"] { --tab-color: #e8f5e9; } /* Mint Green */
-    .tab-btn[data-tab="3"] { --tab-color: #f3e5f5; } /* Lavender */
-    .tab-btn[data-tab="4"] { --tab-color: #fff3e0; } /* Peach */
-    .tab-btn[data-tab="5"] { --tab-color: #e0f2f1; } /* Light Teal */
-
     .toolbar {
       display: flex;
       gap: 10px;
@@ -78,15 +73,12 @@
       font-size: 14px;
       cursor: pointer;
       width: auto;
-      transition: background 0.2s, transform 0.1s;
+      transition: background 0.2s;
     }
     button.action-btn:hover {
       background: #f0f0f0;
     }
-    button.action-btn:active {
-      transform: translateY(1px);
-    }
-    #editor {
+    .editor {
       flex: 1;
       width: 100%;
       height: 100%;
@@ -100,15 +92,18 @@
       transition: background 0.2s;
       box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
     }
+    .editor:not(.active) {
+      display: none;
+    }
     .toast {
       position: fixed;
       bottom: 15px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.8);
+      background: rgba(0,0,0,0.75);
       color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
+      padding: 6px 12px;
+      border-radius: 12px;
       font-size: 13px;
       opacity: 0;
       transition: opacity 0.2s;
@@ -133,23 +128,38 @@
     <button class="action-btn" id="clearBtn">Clear</button>
   </div>
   
-  <textarea id="editor" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor active" data-tab="1" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor" data-tab="2" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor" data-tab="3" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor" data-tab="4" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor" data-tab="5" placeholder="Type or paste text here..."></textarea>
   <div class="toast" id="toast"></div>
 
   <script>
-    const editor = document.getElementById('editor');
     const pasteBtn = document.getElementById('pasteBtn');
     const copyBtn = document.getElementById('copyBtn');
     const saveBtn = document.getElementById('saveBtn');
     const clearBtn = document.getElementById('clearBtn');
     const toast = document.getElementById('toast');
     const tabBtns = document.querySelectorAll('.tab-btn');
+    const editorByTab = {};
+    document.querySelectorAll('.editor').forEach(ed => {
+      editorByTab[ed.dataset.tab] = ed;
+    });
 
     let currentTab = 1;
 
-    // NEW: Updated storage key prefix to prevent conflicts with old data
+    // Updated DB name / LocalStorage key prefix
     function getStorageKey(tabIndex) {
-      return `cr_workspace_v2_${tabIndex}`;
+      return `clearread_pro_${tabIndex}`;
+    }
+
+    function editorFor(tabIndex) {
+      return editorByTab[String(tabIndex)];
+    }
+
+    function persist(tabIndex) {
+      localStorage.setItem(getStorageKey(tabIndex), editorFor(tabIndex).value);
     }
 
     function showToast(msg) {
@@ -158,39 +168,31 @@
       setTimeout(() => toast.style.opacity = 0, 1200);
     }
 
-    // NEW: Helper function to ensure auto-save catches ALL changes
-    function setEditorValue(text) {
-      editor.value = text;
-      // Manually dispatch the 'input' event so the auto-save listener picks it up
-      editor.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
     function save() {
-      localStorage.setItem(getStorageKey(currentTab), editor.value);
+      persist(currentTab);
       showToast("Saved");
     }
 
-    function load() {
-      const data = localStorage.getItem(getStorageKey(currentTab));
-      setEditorValue(data || ''); // Use helper instead of direct assignment
+    function loadAll() {
+      Object.keys(editorByTab).forEach(tabIndex => {
+        const data = localStorage.getItem(getStorageKey(tabIndex));
+        editorByTab[tabIndex].value = data || '';
+      });
     }
 
     function switchTab(tabIndex) {
-      // Save current tab's content before switching to prevent data loss
-      localStorage.setItem(getStorageKey(currentTab), editor.value);
-      
+      if (tabIndex === currentTab) return;
+
+      persist(currentTab);
+      editorFor(currentTab).classList.remove('active');
+
       currentTab = tabIndex;
-      
-      // Update UI
+
       tabBtns.forEach(btn => {
-        btn.classList.remove('active');
-        if (parseInt(btn.dataset.tab) === currentTab) {
-          btn.classList.add('active');
-        }
+        btn.classList.toggle('active', parseInt(btn.dataset.tab, 10) === currentTab);
       });
-      
-      // Load new tab's content
-      load();
+
+      editorFor(currentTab).classList.add('active');
       applyTabTheme();
     }
 
@@ -204,23 +206,31 @@
     }
 
     async function paste() {
+      const tabAtStart = currentTab;
+      const target = editorFor(tabAtStart);
       try {
+        let text = "";
+        let usedFallback = false;
         if (navigator.clipboard?.readText) {
-          const text = await navigator.clipboard.readText();
-          if (text) {
-            setEditorValue(text); // Use helper
-            showToast("Pasted");
-            return;
-          }
+          text = await navigator.clipboard.readText();
         }
-        // Fallback for Android/older browsers
-        const temp = document.createElement("textarea");
-        document.body.appendChild(temp);
-        temp.focus();
-        document.execCommand("paste");
-        setEditorValue(temp.value); // Use helper
-        document.body.removeChild(temp);
-        showToast("Pasted (Fallback)");
+        if (!text) {
+          usedFallback = true;
+          const temp = document.createElement("textarea");
+          document.body.appendChild(temp);
+          temp.focus();
+          document.execCommand("paste");
+          text = temp.value;
+          document.body.removeChild(temp);
+        }
+        if (!text) {
+          showToast("Clipboard blocked");
+          return;
+        }
+        target.value = text;
+        persist(tabAtStart);
+        if (currentTab === tabAtStart) target.focus();
+        showToast(usedFallback ? "Pasted (Fallback)" : "Pasted");
       } catch (e) {
         console.log(e);
         showToast("Clipboard blocked");
@@ -228,14 +238,15 @@
     }
 
     async function copy() {
+      const text = editorFor(currentTab).value;
+      const target = editorFor(currentTab);
       try {
         if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(editor.value);
+          await navigator.clipboard.writeText(text);
           showToast("Copied");
         } else {
-          // Fallback for older browsers
-          editor.focus();
-          editor.setSelectionRange(0, 999999);
+          target.focus();
+          target.setSelectionRange(0, target.value.length);
           document.execCommand("copy");
           showToast("Copied (Fallback)");
         }
@@ -250,28 +261,30 @@
     copyBtn.onclick = copy;
     saveBtn.onclick = save;
     clearBtn.onclick = () => {
-      setEditorValue(''); // Use helper to ensure localStorage is updated
+      editorFor(currentTab).value = '';
       localStorage.removeItem(getStorageKey(currentTab));
       showToast("Cleared");
     };
 
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
-        const tabIndex = parseInt(btn.dataset.tab);
-        if (tabIndex !== currentTab) {
-          switchTab(tabIndex);
-        }
+        switchTab(parseInt(btn.dataset.tab, 10));
       });
     });
 
-    // Silent auto-save on typing (now also catches paste/load/clear thanks to setEditorValue)
-    editor.addEventListener('input', () => {
-      localStorage.setItem(getStorageKey(currentTab), editor.value);
+    Object.keys(editorByTab).forEach(tabIndex => {
+      editorByTab[tabIndex].addEventListener('input', () => {
+        persist(tabIndex);
+      });
+    });
+
+    window.addEventListener('beforeunload', () => {
+      Object.keys(editorByTab).forEach(persist);
     });
 
     // Initial load
     applyTabTheme();
-    load();
+    loadAll();
   </script>
 </body>
 </html>
