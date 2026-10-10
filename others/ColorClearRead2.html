@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<!-- saved from url=(0041)https://saurav781996.github.io/ClearRead/ -->
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindCanvas — Fast &amp; Simple</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --active-tab-color: #ffffff; }
+    html, body {
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .tabs {
+      display: flex;
+      gap: 6px;
+      padding: 12px 12px 0 12px;
+      background: #f8fafc;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px 8px 0 0;
+      padding: 10px 12px;
+      background: var(--tab-color, #f1f5f9);
+      color: #0f172a; /* Deep dark color for maximum tab text clarity */
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover {
+      filter: brightness(0.96);
+      border-color: #94a3b8;
+    }
+    .tab-btn.active {
+      filter: none;
+      font-weight: 700;
+      border-bottom: 1px solid transparent;
+      margin-bottom: -1px;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
+    }
+    
+    /* High-Contrast Light Color Profile (Guaranteed Text Readability) */
+    .tab-btn[data-tab="1"] { --tab-color: #e0f2fe; } /* Light Sky Blue */
+    .tab-btn[data-tab="2"] { --tab-color: #dcfce7; } /* Light Mint Green */
+    .tab-btn[data-tab="3"] { --tab-color: #fef9c3; } /* Light Warm Yellow */
+    .tab-btn[data-tab="4"] { --tab-color: #f3e8ff; } /* Light Lavender */
+    .tab-btn[data-tab="5"] { --tab-color: #ffe4e6; } /* Light Rose Pink */
+    
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      justify-content: center;
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    button.action-btn {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px 16px;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      width: auto;
+      transition: all 0.2s ease;
+    }
+    button.action-btn:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+    button.action-btn:active {
+      background: #e2e8f0;
+    }
+    .editor {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      padding: 16px;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #0f172a; /* Explicit dark text color for perfect clarity on any background */
+      border: none;
+      outline: none;
+      resize: none;
+      background: var(--active-tab-color, #fff);
+      transition: background 0.3s ease;
+      box-shadow: inset 0 0 6px rgba(0,0,0,0.03);
+    }
+    .editor::placeholder {
+      color: #94a3b8;
+    }
+    .editor:not(.active) {
+      display: none;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+  </style>
+</head>
+<body>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="1">Sky</button>
+    <button class="tab-btn" data-tab="2">Mint</button>
+    <button class="tab-btn" data-tab="3">Sun</button>
+    <button class="tab-btn" data-tab="4">Lavender</button>
+    <button class="tab-btn" data-tab="5">Rose</button>
+  </div>
+  
+  <div class="toolbar">
+    <button class="action-btn" id="pasteBtn">Paste</button>
+    <button class="action-btn" id="copyBtn">Copy</button>
+    <button class="action-btn" id="saveBtn">Save</button>
+    <button class="action-btn" id="clearBtn">Clear</button>
+  </div>
+  
+  <textarea class="editor active" data-tab="1" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor" data-tab="2" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor" data-tab="3" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor" data-tab="4" placeholder="Type or paste text here..."></textarea>
+  <textarea class="editor" data-tab="5" placeholder="Type or paste text here..."></textarea>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const pasteBtn = document.getElementById('pasteBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const toast = document.getElementById('toast');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const editorByTab = {};
+    
+    document.querySelectorAll('.editor').forEach(ed => {
+      editorByTab[ed.dataset.tab] = ed;
+    });
+
+    let currentTab = 1;
+
+    // NEW DB NAME: Changed to 'mindcanvas_v1_'
+    function getStorageKey(tabIndex) {
+      return `mindcanvas_v1_${tabIndex}`;
+    }
+
+    function editorFor(tabIndex) {
+      return editorByTab[String(tabIndex)];
+    }
+
+    function persist(tabIndex) {
+      localStorage.setItem(getStorageKey(tabIndex), editorFor(tabIndex).value);
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1200);
+    }
+
+    function save() {
+      persist(currentTab);
+      showToast("Saved successfully");
+    }
+
+    function loadAll() {
+      Object.keys(editorByTab).forEach(tabIndex => {
+        const data = localStorage.getItem(getStorageKey(tabIndex));
+        editorByTab[tabIndex].value = data || '';
+      });
+    }
+
+    function switchTab(tabIndex) {
+      if (tabIndex === currentTab) return;
+
+      persist(currentTab);
+      editorFor(currentTab).classList.remove('active');
+
+      currentTab = tabIndex;
+
+      tabBtns.forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.tab, 10) === currentTab);
+      });
+
+      editorFor(currentTab).classList.add('active');
+      applyTabTheme();
+    }
+
+    function applyTabTheme() {
+      const activeBtn = document.querySelector(`.tab-btn[data-tab="${currentTab}"]`);
+      if (!activeBtn) return;
+      const tabColor = getComputedStyle(activeBtn).getPropertyValue('--tab-color').trim();
+      if (tabColor) {
+        document.documentElement.style.setProperty('--active-tab-color', tabColor);
+      }
+    }
+
+    async function paste() {
+      const tabAtStart = currentTab;
+      const target = editorFor(tabAtStart);
+      try {
+        let text = "";
+        let usedFallback = false;
+        if (navigator.clipboard?.readText) {
+          text = await navigator.clipboard.readText();
+        }
+        if (!text) {
+          usedFallback = true;
+          const temp = document.createElement("textarea");
+          document.body.appendChild(temp);
+          temp.focus();
+          document.execCommand("paste");
+          text = temp.value;
+          document.body.removeChild(temp);
+        }
+        if (!text) {
+          showToast("Clipboard blocked");
+          return;
+        }
+        target.value = text;
+        persist(tabAtStart);
+        if (currentTab === tabAtStart) target.focus();
+        showToast(usedFallback ? "Pasted (Fallback)" : "Pasted");
+      } catch (e) {
+        console.log(e);
+        showToast("Clipboard blocked");
+      }
+    }
+
+    async function copy() {
+      const text = editorFor(currentTab).value;
+      const target = editorFor(currentTab);
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          showToast("Copied to clipboard");
+        } else {
+          target.focus();
+          target.setSelectionRange(0, target.value.length);
+          document.execCommand("copy");
+          showToast("Copied (Fallback)");
+        }
+      } catch (e) {
+        console.log(e);
+        showToast("Copy failed");
+      }
+    }
+
+    // Event Listeners
+    pasteBtn.onclick = paste;
+    copyBtn.onclick = copy;
+    saveBtn.onclick = save;
+    clearBtn.onclick = () => {
+      if (editorFor(currentTab).value === '') return;
+      editorFor(currentTab).value = '';
+      localStorage.removeItem(getStorageKey(currentTab));
+      showToast("Cleared");
+    };
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        switchTab(parseInt(btn.dataset.tab, 10));
+      });
+    });
+
+    Object.keys(editorByTab).forEach(tabIndex => {
+      editorByTab[tabIndex].addEventListener('input', () => {
+        persist(tabIndex);
+      });
+    });
+
+    window.addEventListener('beforeunload', () => {
+      Object.keys(editorByTab).forEach(persist);
+    });
+
+    // Initial load
+    applyTabTheme();
+    loadAll();
+  </script>
+</body>
+</html>
