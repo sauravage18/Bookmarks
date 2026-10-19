@@ -835,7 +835,7 @@ async function renderGames(catId, catName, reopenIds = []) {
         return;
     }
 
-    games.sort((a, b) => a.title.localeCompare(b.title));
+	games.sort((a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true }));
     el.innerHTML = games.map(g => gameItemHtml(g, { open: reopenIds.includes(g.id) })).join('');
     syncToggleAllButton();
 }
