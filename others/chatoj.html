@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat → JSON Converter</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1e2230; --line:#2a2f3d;
+    --txt:#e6e9f0; --muted:#8b93a7; --accent:#5b8cff; --accent2:#38d39f; --danger:#ff5c7a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       background:radial-gradient(1200px 600px at 20% -10%,#1b2130,transparent),var(--bg);color:var(--txt);
+       min-height:100vh;padding:28px 18px 60px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:-.4px}
+  h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--muted);margin:0 0 22px;font-size:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 7px;font-weight:600}
+  input[type=text],textarea{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+       color:var(--txt);padding:11px 12px;font-size:14px;outline:none;transition:border .15s}
+  input[type=text]:focus,textarea:focus{border-color:var(--accent)}
+  textarea{min-height:320px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       font-size:12.5px;line-height:1.5;white-space:pre;overflow:auto}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .field{margin-bottom:14px}
+  .drop{border:1.5px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--muted);
+       font-size:13px;cursor:pointer;transition:.15s;margin-bottom:14px}
+  .drop:hover,.drop.on{border-color:var(--accent);color:var(--txt);background:var(--panel2)}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  button{border:0;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+  .primary{background:linear-gradient(90deg,var(--accent),#7aa2ff);color:#fff}
+  .primary:hover{filter:brightness(1.1)}
+  .ghost{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
+  .ghost:hover{border-color:var(--accent)}
+  .stats{display:flex;gap:16px;margin-top:14px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+  .stats b{color:var(--accent2)}
+  pre{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;
+      max-height:400px;font-size:12px;line-height:1.5;margin:0}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--accent2);
+      color:#06251b;font-weight:700;padding:11px 20px;border-radius:30px;font-size:13.5px;opacity:0;
+      transition:.3s;pointer-events:none;z-index:99}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  .hint{font-size:12px;color:var(--muted);margin-top:8px}
+  .sec-title{font-size:15px;font-weight:700;margin:0 0 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Chat Log → <span>JSON Converter</span></h1>
+  <p class="sub">Paste a chat transcript or drop a <code>.txt</code> file. Each message becomes a subNote with a fresh ID &amp; timestamp. Download starts automatically.</p>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div class="card">
+      <div class="field">
+        <label for="mainTitle">Main Title</label>
+        <input id="mainTitle" type="text" placeholder="e.g. Manu & Ridima Chat" value="Chat">
+      </div>
+      <div class="field">
+        <label for="mainContent">Main Content (optional)</label>
+        <input id="mainContent" type="text" placeholder="Short description of this log">
+      </div>
+      <div class="drop" id="drop">
+        📄 Click or drop a <b>.txt</b> file here
+        <input id="file" type="file" accept=".txt,text/plain" hidden>
+      </div>
+      <div class="field">
+        <label for="input">Chat Transcript</label>
+        <textarea id="input" placeholder=""></textarea>
+      </div>
+      <div class="btns">
+        <button class="primary" id="convert">Convert &amp; Download JSON</button>
+        <button class="ghost" id="clear">Clear</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <p class="hint">Format expected: a line ending in <code>:</code> (the speaker) followed by their message on the next line. Lines like <code>00:01:20</code> become timestamp notes.</p>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="card">
+      <p class="sec-title">Live Preview</p>
+      <pre id="preview">// preview appears here…</pre>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ JSON downloaded</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const input = $('#input'), preview = $('#preview'), stats = $('#stats');
+
+const SPEAKER_RE = /^([A-Za-z0-9_\-.\u0900-\u097F]+)\s*:\s*$/;   // "manu0007:"  /  "Guest-Ridima:"
+const INLINE_RE  = /^([A-Za-z0-9_\-.\u0900-\u097F]+)\s*:\s+(.+)$/; // "manu0007: hello"
+const TIME_RE    = /^\d{1,2}:\d{2}(:\d{2})?$/;                     // "00:01:20"
+
+function parseChat(text){
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  const notes = [];
+  let lastSpeaker = null;
+
+  for (const raw of lines){
+    const line = raw.trim();
+    if (!line) continue;
+
+    // standalone time marker
+    if (TIME_RE.test(line)){
+      notes.push({ title: 'time', content: line });
+      continue;
+    }
+    // speaker-only line
+    const sp = line.match(SPEAKER_RE);
+    if (sp){
+      lastSpeaker = sp[1];
+      continue;
+    }
+    // inline "speaker: message"
+    const inl = line.match(INLINE_RE);
+    if (inl && (!lastSpeaker || inl[1] === lastSpeaker || /^[A-Za-z0-9_\-]+$/.test(inl[1]) && inl[1].length < 20)){
+      notes.push({ title: inl[1], content: inl[2] });
+      lastSpeaker = inl[1];
+      continue;
+    }
+    // plain message -> belongs to last speaker
+    notes.push({ title: lastSpeaker || 'message', content: line });
+  }
+  return notes;
+}
+
+function fmtDate(ts){
+  const d = new Date(ts);
+  return d.toLocaleString('en-US', {hour12:true, month:'2-digit', day:'2-digit', year:'numeric',
+          hour:'numeric', minute:'2-digit', second:'2-digit'});
+}
+
+function buildJSON(notes, title, content){
+  const base = Date.now();
+  const subNotes = notes.map((n, i) => {
+    const ts = base + i + 1;
+    return {
+      id: ts,
+      title: n.title,
+      content: n.content,
+      date: fmtDate(ts),
+      timestamp: ts
+    };
+  });
+  return [{
+    id: base,
+    title: title || 'Chat',
+    content: content || 'Chat transcript',
+    date: fmtDate(base),
+    timestamp: base,
+    subNotes
+  }];
+}
+
+function slug(s){ return (s||'chat').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'chat'; }
+
+function updatePreview(){
+  const notes = parseChat(input.value);
+  if (!notes.length){ preview.textContent = '// preview appears here…'; stats.innerHTML=''; return; }
+  const data = buildJSON(notes, $('#mainTitle').value, $('#mainContent').value);
+  preview.textContent = JSON.stringify(data, null, 2);
+  const speakers = new Set(notes.map(n=>n.title));
+  stats.innerHTML = `<span>Messages: <b>${notes.length}</b></span>
+                     <span>Speakers: <b>${speakers.size}</b></span>
+                     <span>Notes ready</span>`;
+}
+
+function download(){
+  const notes = parseChat(input.value);
+  if (!notes.length){ toast('Nothing to convert'); return; }
+  const title = $('#mainTitle').value.trim() || 'Chat';
+  const data = buildJSON(notes, title, $('#mainContent').value.trim());
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = slug(title) + '-' + Date.now() + '.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  toast('✓ JSON downloaded');
+}
+
+let toastT;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+// events
+input.addEventListener('input', updatePreview);
+$('#mainTitle').addEventListener('input', updatePreview);
+$('#mainContent').addEventListener('input', updatePreview);
+$('#convert').addEventListener('click', download);
+$('#clear').addEventListener('click', ()=>{ input.value=''; updatePreview(); });
+
+// file drop / pick
+const drop = $('#drop'), file = $('#file');
+drop.addEventListener('click', ()=>file.click());
+file.addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ input.value = r.result; if(!$('#mainTitle').value || $('#mainTitle').value==='Chat') $('#mainTitle').value = f.name.replace(/\.txt$/i,''); updatePreview(); };
+  r.readAsText(f);
+});
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('on');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('on');}));
+drop.addEventListener('drop', e=>{
+  const f = e.dataTransfer.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{ input.value = r.result; if(!$('#mainTitle').value || $('#mainTitle').value==='Chat') $('#mainTitle').value = f.name.replace(/\.txt$/i,''); updatePreview(); };
+  r.readAsText(f);
+});
+
+updatePreview();
+</script>
+</body>
+</html>
