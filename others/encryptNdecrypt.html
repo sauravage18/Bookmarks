@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AES Encryptor / Decryptor</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+}
+h2{ text-align:center; }
+textarea{
+    width:100%;
+    min-height:180px;
+    padding:10px;
+    font-size:14px;
+    box-sizing:border-box;
+    margin-top:8px;
+    font-family: Consolas, monospace;
+}
+.box{ margin-bottom:20px; }
+.info{
+    background:#f5f5f5;
+    padding:10px;
+    border-radius:6px;
+    margin-bottom:20px;
+    font-size:14px;
+}
+.status{
+    color:#555;
+    font-size:13px;
+    margin-top:4px;
+    min-height:16px;
+}
+</style>
+</head>
+<body>
+
+<h2>AES CBC Encryptor / Decryptor</h2>
+
+<div class="info">
+    Uses the native <b>Web Crypto API</b> (AES-128-CBC, PKCS7 padding) — works smoothly even with very large inputs.
+</div>
+
+<div class="box">
+    <label><b>Plain Text</b></label>
+    <textarea id="plainText" placeholder="Type plain text here..."></textarea>
+    <div class="status" id="statusPlain"></div>
+</div>
+
+<div class="box">
+    <label><b>Encrypted Text (Base64)</b></label>
+    <textarea id="encryptedText" placeholder="Encrypted text appears here..."></textarea>
+    <div class="status" id="statusEnc"></div>
+</div>
+
+<div class="box">
+    <label><b>Decrypted Output</b></label>
+    <textarea id="decryptedOutput" readonly></textarea>
+</div>
+
+<script>
+/* ---------- Crypto setup (native Web Crypto API) ---------- */
+const KEY_STRING = "39D563AA9A2706F1"; // 16 bytes -> AES-128
+const IV_STRING  = "39D563AA9A2706F1";
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+const IV_BYTES = encoder.encode(IV_STRING);
+
+let cryptoKey = null;
+
+async function initKey(){
+    const keyBytes = encoder.encode(KEY_STRING);
+    cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        keyBytes,
+        { name: "AES-CBC" },
+        false,
+        ["encrypt", "decrypt"]
+    );
+}
+
+/* ---------- Base64 helpers (binary-safe) ---------- */
+function bytesToBase64(bytes){
+    // Chunked conversion avoids "Maximum call stack size exceeded" on huge arrays
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize){
+        const chunk = bytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
+    }
+    return btoa(binary);
+}
+
+function base64ToBytes(b64){
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++){
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
+/* ---------- Encrypt / Decrypt ---------- */
+async function encrypt(text){
+    const data = encoder.encode(text);
+    const encrypted = await crypto.subtle.encrypt(
+        { name: "AES-CBC", iv: IV_BYTES },
+        cryptoKey,
+        data
+    );
+    return bytesToBase64(new Uint8Array(encrypted));
+}
+
+async function decrypt(b64){
+    try{
+        const bytes = base64ToBytes(b64);
+        const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-CBC", iv: IV_BYTES },
+            cryptoKey,
+            bytes
+        );
+        return decoder.decode(decrypted);
+    }catch(e){
+        return "";
+    }
+}
+
+/* ---------- Debounce helper ---------- */
+function debounce(fn, delay){
+    let t = null;
+    return function(...args){
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), delay);
+    };
+}
+
+/* ---------- UI wiring ---------- */
+const plainText       = document.getElementById("plainText");
+const encryptedText   = document.getElementById("encryptedText");
+const decryptedOutput = document.getElementById("decryptedOutput");
+const statusPlain     = document.getElementById("statusPlain");
+const statusEnc       = document.getElementById("statusEnc");
+
+const runEncrypt = debounce(async () => {
+    const value = plainText.value;
+    if (value === ""){
+        encryptedText.value = "";
+        decryptedOutput.value = "";
+        statusPlain.textContent = "";
+        return;
+    }
+    statusPlain.textContent = "Encrypting...";
+    const t0 = performance.now();
+    const enc = await encrypt(value);
+    const dt = (performance.now() - t0).toFixed(1);
+    encryptedText.value = enc;
+    decryptedOutput.value = value;
+    statusPlain.textContent = `Encrypted ${value.length} chars in ${dt} ms`;
+}, 250);
+
+const runDecrypt = debounce(async () => {
+    const value = encryptedText.value.trim();
+    if (value === ""){
+        decryptedOutput.value = "";
+        statusEnc.textContent = "";
+        return;
+    }
+    statusEnc.textContent = "Decrypting...";
+    const t0 = performance.now();
+    const dec = await decrypt(value);
+    const dt = (performance.now() - t0).toFixed(1);
+    decryptedOutput.value = dec || "(invalid ciphertext / padding error)";
+    statusEnc.textContent = `Decrypted in ${dt} ms`;
+}, 250);
+
+plainText.addEventListener("input", runEncrypt);
+encryptedText.addEventListener("input", runDecrypt);
+
+/* ---------- Boot ---------- */
+initKey().catch(err => {
+    console.error("Failed to init crypto key:", err);
+    alert("Crypto initialization failed: " + err.message);
+});
+</script>
+
+</body>
+</html>
